@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Parameters that can be passed, set to empty by default
+INPUT=""
+OUTPUT=""
+DESC=""
+
+# Help function
+usage() {
+	printf "%s\n" ""
+	printf "%s\n" "Image2HTML"
+	printf "%s\n" "Converts an image to an embeded html img tag with base64 encoding."
+	printf "%s\n" ""
+	printf "%s\n" "Arguments: "
+	printf "%-30s" "(-h|--help): " 
+	printf "%s\n" "Displays the help page."
+	printf "%-30s" "(-i|--input 'file'): "
+	printf "%s\n" "The input file, the image to be converted."
+	printf "%-30s"  "(-o|--output 'file'): "
+	printf "%s\n" "The file to output results to."
+	printf "%-30s" "(-d|--description 'desc'): "
+	printf "%s\n" "The description of the image, used in html alt attribute."
+	printf "%s\n" ""
+}
+
+# Collect arguments
+while [ "$1" != "" ]; do
+	case $1 in
+		-h | --help)
+			usage
+			exit
+			;;
+		-i | --input)
+			shift
+			INPUT=$1
+			;;
+		-o | --output)
+			shift
+			OUTPUT=$1
+			;;
+		-d | --description)
+			shift
+			DESC=$1
+			;;
+		*)
+			printf "%s\n" "ERROR: Unknown parameter \"$1\""
+			usage
+			exit 1
+			;;
+	esac
+	shift
+done
+
+# If there is no input parameter, print usage and exit
+if [ -z "$INPUT" ]
+then
+	printf "%s\n" "ERROR: No input defined."
+	usage
+	exit 1
+fi
+
+# If there is no output parameter, set it to input with .html extension appended 
+if [ -z "$OUTPUT" ]
+then
+	OUTPUT="$INPUT.html"
+fi
+
+# Let user know we are begining conversion...
+printf "%s\n" "Converting file \"$INPUT\""
+
+# Get mime type of the input
+MIME_TYPE=$(file -b --mime-type "$INPUT")
+# Get image data and then encode it with base64
+IMG_DATA=$(cat "$INPUT" | base64)
+
+# Write image tag to output location using mime type, image data, and description collected earlier.
+printf "%s\n" "<img src=\"data:$MIME_TYPE;base64, $IMG_DATA\" alt=\"$DESC\">" > "$OUTPUT"
+
+# We are finished! Notify the user...
+printf "%s\n" "Finished converting, saved to \"$OUTPUT\""

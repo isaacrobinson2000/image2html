@@ -80,7 +80,7 @@ then
 	OUTPUT="$INPUT.html"
 fi
 
-# Mute error output for all commands below since I do my one error handling
+# Mute standard error for all commands below, since there is already curstom error handling below
 {
 
 # Let user know we are begining conversion...
@@ -97,4 +97,6 @@ printf "%s\n" "<img src=\"data:$MIME_TYPE;base64, $IMG_DATA\" alt=\"$DESC\">" > 
 
 # We are finished! Notify the user...
 printf "%s\n" "Finished converting, saved to \"$OUTPUT\""
+
 } 2> /dev/null
+

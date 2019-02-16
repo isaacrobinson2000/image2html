@@ -23,6 +23,25 @@ usage() {
 	printf "%s\n" ""
 }
 
+# Function for handling errors when they occur
+throw_error() {
+	# If there is a message passed, print it, otherwise just print a generic error message
+	if [ -z "$1" ]
+	then
+		printf "%s\n" "An Unknown Error Occured."
+	else
+		printf "%s\n" "$1"
+	fi
+	
+	# Print usage and exit with an error code of 1
+	usage
+	exit 1
+}
+
+# We want pipes to fail if any command in them fails, makes error catching
+# below easier.
+set -o pipefail
+
 # Collect arguments
 while [ "$1" != "" ]; do
 	case $1 in
@@ -43,20 +62,16 @@ while [ "$1" != "" ]; do
 			DESC=$1
 			;;
 		*)
-			printf "%s\n" "ERROR: Unknown parameter \"$1\""
-			usage
-			exit 1
+			throw_error "ERROR: Unknown parameter \"$1\""
 			;;
 	esac
 	shift
 done
 
 # If there is no input parameter, print usage and exit
-if [ -z "$INPUT" ]
+if [ -z "$INPUT" ] 
 then
-	printf "%s\n" "ERROR: No input defined."
-	usage
-	exit 1
+	throw_error "ERROR: No input defined."
 fi
 
 # If there is no output parameter, set it to input with .html extension appended 
@@ -65,16 +80,21 @@ then
 	OUTPUT="$INPUT.html"
 fi
 
+# Mute error output for all commands below since I do my one error handling
+{
+
 # Let user know we are begining conversion...
-printf "%s\n" "Converting file \"$INPUT\""
+printf "%s\n" "Attempting to convert file \"$INPUT\"..."
+
+# Get image data and encode it using base64
+IMG_DATA=$(cat "$INPUT" | base64) || throw_error "Input file \"$INPUT\" does not exist."
 
 # Get mime type of the input
 MIME_TYPE=$(file -b --mime-type "$INPUT")
-# Get image data and then encode it with base64
-IMG_DATA=$(cat "$INPUT" | base64)
 
 # Write image tag to output location using mime type, image data, and description collected earlier.
-printf "%s\n" "<img src=\"data:$MIME_TYPE;base64, $IMG_DATA\" alt=\"$DESC\">" > "$OUTPUT"
+printf "%s\n" "<img src=\"data:$MIME_TYPE;base64, $IMG_DATA\" alt=\"$DESC\">" > "$OUTPUT" || throw_error "Can't write to \"$OUTPUT\""
 
 # We are finished! Notify the user...
 printf "%s\n" "Finished converting, saved to \"$OUTPUT\""
+} 2> /dev/null

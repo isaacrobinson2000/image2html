@@ -38,10 +38,6 @@ throw_error() {
 	exit 1
 }
 
-# We want pipes to fail if any command in them fails, makes error catching
-# below easier.
-set -o pipefail
-
 # Collect arguments
 while [ "$1" != "" ]; do
 	case $1 in
@@ -80,14 +76,14 @@ then
 	OUTPUT="$INPUT.html"
 fi
 
-# Mute standard error for all commands below, since there is already curstom error handling below
+# Mute standard error for all commands below, since there is already custom error handling below
 {
 
 # Let user know we are begining conversion...
 printf "%s\n" "Attempting to convert file \"$INPUT\"..."
 
 # Get image data and encode it using base64
-IMG_DATA=$(cat "$INPUT" | base64) || throw_error "Input file \"$INPUT\" does not exist."
+IMG_DATA=$(base64 "$INPUT") || throw_error "Input file \"$INPUT\" does not exist."
 
 # Get mime type of the input
 MIME_TYPE=$(file -b --mime-type "$INPUT")
